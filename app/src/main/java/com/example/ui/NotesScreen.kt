@@ -16,6 +16,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,18 +47,25 @@ fun NotesScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             NoteEditor(
                 initialTitle = activeNote?.title ?: "",
                 initialContent = activeNote?.content ?: "",
+                initialPinned = activeNote?.pinned ?: false,
+                isExistingNote = activeNote != null,
                 onClose = {
                     activeNote = null
                     isAdding = false
                 },
-                onSave = { title, content ->
+                onDelete = {
+                    activeNote?.let { viewModel.deleteNote(it.id) }
+                    activeNote = null
+                    isAdding = false
+                },
+                onSave = { title, content, pinned ->
                     if (isAdding) {
                         if (title.isNotBlank() || content.isNotBlank()) {
-                            viewModel.addNote(title.ifBlank { "Untitled Note" }, content)
+                            viewModel.addNote(title.ifBlank { "Untitled Note" }, content, pinned)
                         }
                     } else {
                         activeNote?.let {
-                            viewModel.updateNote(it.copy(title = title, content = content))
+                            viewModel.updateNote(it.copy(title = title, content = content, pinned = pinned))
                         }
                     }
                     activeNote = null
@@ -163,11 +172,15 @@ private fun NoteCard(note: Note, onClick: () -> Unit) {
 private fun NoteEditor(
     initialTitle: String,
     initialContent: String,
+    initialPinned: Boolean,
+    isExistingNote: Boolean,
     onClose: () -> Unit,
-    onSave: (String, String) -> Unit
+    onDelete: () -> Unit,
+    onSave: (String, String, Boolean) -> Unit
 ) {
     var title by remember { mutableStateOf(initialTitle) }
     var content by remember { mutableStateOf(initialContent) }
+    var pinned by remember { mutableStateOf(initialPinned) }
 
     Column(
         modifier = Modifier
@@ -184,13 +197,27 @@ private fun NoteEditor(
             IconButton(onClick = onClose) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Slate400)
             }
-            TextButton(
-                onClick = { onSave(title, content) },
-                colors = ButtonDefaults.textButtonColors(contentColor = Indigo400)
-            ) {
-                Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Save", fontWeight = FontWeight.Medium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { pinned = !pinned }) {
+                    Icon(
+                        Icons.Filled.PushPin,
+                        contentDescription = "Pin",
+                        tint = if (pinned) Amber500 else Slate400
+                    )
+                }
+                if (isExistingNote) {
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Rose500)
+                    }
+                }
+                TextButton(
+                    onClick = { onSave(title, content, pinned) },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Indigo400)
+                ) {
+                    Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Save", fontWeight = FontWeight.Medium)
+                }
             }
         }
 

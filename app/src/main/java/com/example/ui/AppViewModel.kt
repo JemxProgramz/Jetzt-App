@@ -125,14 +125,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val updatedTask = task.copy(completed = !task.completed)
             dao.updateTask(updatedTask)
             
-            // Update stats
-            val currentStats = stats.value ?: Stats()
-            val newCompletedCount = if (updatedTask.completed) {
-                currentStats.tasksCompleted + 1
-            } else {
-                (currentStats.tasksCompleted - 1).coerceAtLeast(0)
-            }
-            dao.insertStats(currentStats.copy(tasksCompleted = newCompletedCount))
+            // Update stats atomically
+            dao.updateTasksCompletedDelta(if (updatedTask.completed) 1 else -1)
         }
     }
 
@@ -144,8 +138,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addFocusSession(hours: Float) {
         viewModelScope.launch {
-            val currentStats = stats.value ?: Stats()
-            dao.insertStats(currentStats.copy(focusHours = currentStats.focusHours + hours))
+            dao.updateFocusHoursDelta(hours)
+        }
+    }
+
+    fun addWater(ounces: Int) {
+        viewModelScope.launch {
+            dao.updateWaterOuncesDelta(ounces)
         }
     }
 

@@ -12,11 +12,14 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.outlined.DirectionsWalk
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +57,8 @@ fun HomeScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    var hasRequestedActivityPermission by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+
     val activityPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -70,7 +75,8 @@ fun HomeScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
 
             val activityGranted = context.checkSelfPermission(android.Manifest.permission.ACTIVITY_RECOGNITION) == android.content.pm.PackageManager.PERMISSION_GRANTED
             viewModel.updateActivityPermissionState(activityGranted)
-            if (!activityGranted) {
+            if (!activityGranted && !hasRequestedActivityPermission) {
+                hasRequestedActivityPermission = true
                 activityPermissionLauncher.launch(android.Manifest.permission.ACTIVITY_RECOGNITION)
             }
         }
@@ -132,7 +138,12 @@ fun HomeScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         }
         
         item {
-            WellbeingSection(stats = currentStats, liveSteps = liveSteps, hasPermission = hasActivityPermission)
+            WellbeingSection(
+                stats = currentStats,
+                liveSteps = liveSteps,
+                hasPermission = hasActivityPermission,
+                onAddWater = { viewModel.addWater(8) }
+            )
         }
         
         item {
@@ -428,7 +439,7 @@ private fun AppUsageSection(appUsage: List<Pair<String, Long>>, hasPermission: B
 }
 
 @Composable
-private fun WellbeingSection(stats: Stats, liveSteps: Int, hasPermission: Boolean) {
+private fun WellbeingSection(stats: Stats, liveSteps: Int, hasPermission: Boolean, onAddWater: () -> Unit) {
     val context = LocalContext.current
     Column {
         Text(
@@ -505,12 +516,24 @@ private fun WellbeingSection(stats: Stats, liveSteps: Int, hasPermission: Boolea
                         Text("Daily goal: 64 oz", style = MaterialTheme.typography.labelSmall, color = Slate400)
                     }
                 }
-                Text(
-                    text = "${stats.waterOunces} oz",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${stats.waterOunces} oz",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(
+                        onClick = onAddWater,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Blue500.copy(alpha = 0.2f))
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Add Water", tint = Blue400, modifier = Modifier.size(16.dp))
+                    }
+                }
             }
         }
     }

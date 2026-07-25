@@ -40,13 +40,18 @@ fun FocusScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     var mode by remember { mutableStateOf("pomodoro") }
     var isActive by remember { mutableStateOf(false) }
     
+    var pomodoroMinutes by remember { mutableIntStateOf(25) }
+    var shortBreakMinutes by remember { mutableIntStateOf(5) }
+    var longBreakMinutes by remember { mutableIntStateOf(15) }
+    var showSettings by remember { mutableStateOf(false) }
+    
     val timers = mapOf(
-        "pomodoro" to 25 * 60,
-        "shortBreak" to 5 * 60,
-        "longBreak" to 15 * 60
+        "pomodoro" to pomodoroMinutes * 60,
+        "shortBreak" to shortBreakMinutes * 60,
+        "longBreak" to longBreakMinutes * 60
     )
     
-    var timeLeft by remember(mode) { mutableIntStateOf(timers[mode] ?: (25 * 60)) }
+    var timeLeft by remember(mode, pomodoroMinutes, shortBreakMinutes, longBreakMinutes) { mutableIntStateOf(timers[mode] ?: (25 * 60)) }
     
     LaunchedEffect(isActive, timeLeft) {
         if (isActive && timeLeft > 0) {
@@ -56,9 +61,13 @@ fun FocusScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             isActive = false
             if (mode == "pomodoro") {
                 viewModel.addFocusSession((timers["pomodoro"] ?: 0) / 3600f)
+                mode = "shortBreak"
+            } else {
+                mode = "pomodoro"
             }
         }
     }
+
 
     Column(
         modifier = modifier
@@ -205,7 +214,7 @@ fun FocusScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             }
             
             IconButton(
-                onClick = { /* Open Settings */ },
+                onClick = { showSettings = true },
                 modifier = Modifier
                     .size(56.dp)
                     .clip(CircleShape)
@@ -216,6 +225,44 @@ fun FocusScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         }
         
         Spacer(modifier = Modifier.weight(1f))
+    }
+
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            title = { Text("Timer Settings", color = Color.White) },
+            text = {
+                Column {
+                    Text("Pomodoro (minutes)", color = Slate300)
+                    Slider(
+                        value = pomodoroMinutes.toFloat(),
+                        onValueChange = { pomodoroMinutes = it.toInt() },
+                        valueRange = 1f..60f,
+                        steps = 59
+                    )
+                    Text("${pomodoroMinutes}m", color = Color.White)
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text("Short Break (minutes)", color = Slate300)
+                    Slider(
+                        value = shortBreakMinutes.toFloat(),
+                        onValueChange = { shortBreakMinutes = it.toInt() },
+                        valueRange = 1f..30f,
+                        steps = 29
+                    )
+                    Text("${shortBreakMinutes}m", color = Color.White)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) {
+                    Text("Done", color = Indigo400)
+                }
+            },
+            containerColor = Slate900,
+            titleContentColor = Color.White,
+            textContentColor = Slate300
+        )
     }
 }
 

@@ -198,9 +198,14 @@ private fun AddTaskForm(
                 )
             )
             
+            val categories = listOf("Personal", "Work", "Study", "Health", "Other")
+            
             FilterChip(
-                selected = true, // Simplified for UI
-                onClick = { /* Toggle category */ },
+                selected = true,
+                onClick = { 
+                    val nextIndex = (categories.indexOf(category) + 1) % categories.size
+                    category = categories[nextIndex]
+                },
                 label = { Text(category) },
                 leadingIcon = { Icon(Icons.Outlined.Sell, null, modifier = Modifier.size(16.dp)) },
                 colors = FilterChipDefaults.filterChipColors(

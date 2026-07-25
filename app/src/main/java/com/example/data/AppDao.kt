@@ -31,6 +31,15 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStats(stats: Stats)
 
+    @Query("UPDATE stats SET tasksCompleted = MAX(0, tasksCompleted + :delta) WHERE id = 1")
+    suspend fun updateTasksCompletedDelta(delta: Int)
+
+    @Query("UPDATE stats SET focusHours = focusHours + :hours WHERE id = 1")
+    suspend fun updateFocusHoursDelta(hours: Float)
+
+    @Query("UPDATE stats SET waterOunces = waterOunces + :ounces WHERE id = 1")
+    suspend fun updateWaterOuncesDelta(ounces: Int)
+
     @Query("SELECT * FROM notes ORDER BY pinned DESC, updatedAt DESC")
     fun getAllNotes(): Flow<List<Note>>
 
