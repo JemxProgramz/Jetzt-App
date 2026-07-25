@@ -1,0 +1,6 @@
+{
+  "name": "Jetzt",
+  "description": "A productivity and focus tracking app based on Jetzt React template.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
